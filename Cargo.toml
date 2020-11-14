@@ -13,3 +13,6 @@ tokio = { version = "0.2", features = ["full"] }
 base64 = "0.13.0"
 anyhow = "1.0.34"
 sha-1 = "0.9"
+bitflags = "1.2.1"
+byteorder = "1.3.4"
+thiserror = "1.0.22"
