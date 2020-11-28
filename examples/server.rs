@@ -8,7 +8,6 @@ async fn main() {
     let server = Server::bind(&addr).serve(make_service_fn(|_| async {
         Ok::<_, Infallible>(WebSocketHandler::new(|mut ws| async move {
             while let Some(msg) = ws.recv().await {
-                dbg!(&msg);
                 dbg!(ws.send(msg).await.ok());
                 ws.send(Message::Binary(vec![0x1, 0x2, 0x3, 0x4]))
                     .await

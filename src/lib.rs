@@ -4,7 +4,6 @@ extern crate bitflags;
 use std::{convert::Infallible, future::Future, pin::Pin, task::Poll};
 
 use anyhow::Result;
-use byteorder::ReadBytesExt;
 use http::{header::CONNECTION, header::UPGRADE, Method, Request, Response, StatusCode};
 use hyper::{service::Service, upgrade::Upgraded, Body};
 use sha1::Digest;
@@ -60,11 +59,9 @@ enum Opcode {
     Continuation,
     Text,
     Binary,
-    NonControl(u8),
     ConnectionClose,
     Ping,
     Pong,
-    Control(u8),
 }
 
 impl From<u8> for Opcode {
@@ -73,12 +70,10 @@ impl From<u8> for Opcode {
             0x0 => Opcode::Continuation,
             0x1 => Opcode::Text,
             0x2 => Opcode::Binary,
-            value @ 0x3..=0x7 => Opcode::NonControl(value),
             0x8 => Opcode::ConnectionClose,
             0x9 => Opcode::Ping,
             0xA => Opcode::Pong,
-            value @ 0xB..=0xF => Opcode::Control(value),
-            _ => unreachable!(),
+            _ => panic!("Unsupported Opcode"),
         }
     }
 }
@@ -89,11 +84,9 @@ impl Into<u8> for Opcode {
             Opcode::Continuation => 0x0,
             Opcode::Text => 0x1,
             Opcode::Binary => 0x2,
-            Opcode::NonControl(v) => v,
             Opcode::ConnectionClose => 0x8,
             Opcode::Ping => 0x9,
             Opcode::Pong => 0xA,
-            Opcode::Control(v) => v,
         }
     }
 }
@@ -293,11 +286,7 @@ impl WebSocketReader {
 
             // TODO: Handle these cases
             match frame.opcode {
-                Opcode::NonControl(_)
-                | Opcode::ConnectionClose
-                | Opcode::Ping
-                | Opcode::Pong
-                | Opcode::Control(_) => todo!(),
+                Opcode::ConnectionClose | Opcode::Ping | Opcode::Pong => todo!(),
                 _ => {}
             };
 
@@ -401,7 +390,7 @@ where
 
     fn poll_ready(
         &mut self,
-        cx: &mut std::task::Context<'_>,
+        _cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Result<(), Self::Error>> {
         Poll::Ready(Ok(()))
     }
